@@ -87,7 +87,7 @@ void *begintx(void *arg){
     tx->nextr = ZGT_Sh->lastr;
     ZGT_Sh->lastr = tx;  
     zgt_v(0);       // Release tx manager
-  fprintf(ZGT_Sh->logfile, "T%ld\t%c \tBeginTx\n", node->tid, node->Txtype); // Write log record and close
+    fprintf(ZGT_Sh->logfile, "T%-4ld    %c    \tBeginTx\n", node->tid, node->Txtype); // Write log record and close
     fflush(ZGT_Sh->logfile);
   finish_operation(node->tid);
   pthread_exit(NULL);       // thread exit
@@ -121,12 +121,6 @@ void *readtx(void *arg){
   {
     pthread_exit(NULL);
   }
- 
-  ZGT_Sh->objarray[node->obno]->value -= 4; // Perform read operation (decrease object value by 4)
- 
-  fprintf(ZGT_Sh->logfile, "T%ld ReadTx %ld:%d ReadLock Granted\n",  // Log the operation
-  node->tid, node->obno, ZGT_Sh->objarray[node->obno]->value);
-  fflush(ZGT_Sh->logfile);
   finish_operation(node->tid); // Signal completion
   pthread_exit(NULL);
 }
@@ -154,12 +148,6 @@ void *writetx(void *arg){ //do the operations for writing; similar to readTx
   {
     pthread_exit(NULL);
   }
- 
-  ZGT_Sh->objarray[node->obno]->value += 7; // Perform write operation (increase object value by 7)
-  fprintf(ZGT_Sh->logfile, "T%ld WriteTx %ld:%d WriteLock Granted\n",  // Log the write operation
-    node->tid, node->obno, ZGT_Sh->objarray[node->obno]->value);
-  fflush(ZGT_Sh->logfile);
- 
   finish_operation(node->tid);
   pthread_exit(NULL);
 }
@@ -178,9 +166,6 @@ void *aborttx(void *arg)
   {  
     pthread_exit(NULL);
   }
- 
-  fprintf(ZGT_Sh->logfile, "T%ld AbortTx\n", node->tid);   //log abort operation
-  fflush(ZGT_Sh->logfile);
  
   do_commit_abort_operation(node->tid, 'A');  // Abort the transaction
   finish_operation(node->tid);
@@ -201,10 +186,6 @@ void *committx(void *arg)
   {  
     pthread_exit(NULL);
   }
- 
-  fprintf(ZGT_Sh->logfile, "T%ld CommitTx\n", node->tid); // Log commit operation
-  fflush(ZGT_Sh->logfile);
- 
   do_commit_abort_operation(node->tid, 'C'); // Commit the transaction
   finish_operation(node->tid);
   pthread_exit(NULL);     // thread exit
@@ -228,7 +209,7 @@ void *do_commit_abort_operation(long t, char status)
   }
  
   // Log Commit or Abort
-  fprintf(ZGT_Sh->logfile, "T%ld %s\n", t, (status == 'C') ? "CommitTx" : "AbortTx");
+  fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\t%s\t", t, (status == 'C') ? "CommitTx" : "AbortTx");
   fflush(ZGT_Sh->logfile);
  
   // Set transaction status
@@ -297,6 +278,13 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
         fflush(stdout);
         return -1;
     }
+  }
+
+  // If another transaction holds the lock when write wants the lock, log "Not Granted"
+  if (lockmode1 == 'X')
+  {
+    fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tWriteTx  \t%ld:X:X              \tWriteLock\tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
+    fflush(ZGT_Sh->logfile);
   }
  
   // Set transaction to end state
@@ -435,14 +423,14 @@ void zgt_tx::perform_read_write_operation(long tid,long obno, char lockmode){
  
     if (lockmode == 'X') {  // Write operation
         ZGT_Sh->objarray[obno]->value = objectValue + 7; // Increase by 7 (as per project spec)
-        fprintf(ZGT_Sh->logfile, "T%ld\tWriteTx\t%ld:%d:%d\tWriteLock\tGranted\tStatus: %c\n",
+        fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tWriteTx  \t%ld:%d:%-14d\tWriteLock\tGranted\t\t%c\n",
                 this->tid, obno, ZGT_Sh->objarray[obno]->value, ZGT_Sh->optime[tid], this->status);
         fflush(ZGT_Sh->logfile);
         usleep(ZGT_Sh->optime[tid] * 1000);  // Simulate operation delay
     }
     else {  // Read operation
         ZGT_Sh->objarray[obno]->value = objectValue - 4; // Decrease by 4 (as per project spec)
-        fprintf(ZGT_Sh->logfile, "T%ld\tReadTx\t%ld:%d:%d\tReadLock\tGranted\tStatus: %c\n",
+        fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tReadTx   \t%ld:%d:%-14d\tReadLock \tGranted\t\t%c\n",
                 this->tid, obno, ZGT_Sh->objarray[obno]->value, ZGT_Sh->optime[tid], this->status);
         fflush(ZGT_Sh->logfile);
         usleep(ZGT_Sh->optime[tid] * 1000);  // Simulate operation delay
