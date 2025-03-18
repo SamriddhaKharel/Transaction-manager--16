@@ -261,6 +261,7 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
   //if successful  return(0); else -1
  
   //write your code
+  
   zgt_hlink *existingLock = ZGT_Ht->findt(tid1, sgno1, obno1); // Check if transaction already holds this lock
   if (existingLock && existingLock->tid == this->tid) {  
     this->lockmode = lockmode1;
@@ -269,7 +270,8 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
   }
  
   zgt_hlink *otherTxnLock = ZGT_Ht->find(sgno1, obno1);
-  if (!otherTxnLock) {  
+  // If no other transaction holds a lock, acquire it immediately
+  if (!otherTxnLock || (otherTxnLock->lockmode == 'S' && lockmode1 == 'S')) {  
     if (ZGT_Ht->add(this, sgno1, obno1, lockmode1) >= 0) {
         this->perform_read_write_operation(tid1, obno1, lockmode1);
         return 0;
@@ -281,9 +283,21 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
   }
 
   // If another transaction holds the lock when write wants the lock, log "Not Granted"
-  if (lockmode1 == 'X')
+  if (lockmode1 == 'X' && otherTxnLock->lockmode == 'X')
   {
     fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tWriteTx  \t%ld:X:X              \tWriteLock\tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
+    fflush(ZGT_Sh->logfile);
+  }
+
+  if (lockmode1 == 'X' && otherTxnLock->lockmode == 'S')
+  {
+    fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tWriteTx  \t%ld:X:X              \tWriteLock\tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
+    fflush(ZGT_Sh->logfile);
+  }
+
+  if (lockmode1 == 'S' && otherTxnLock->lockmode == 'X')
+  {
+    fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tReadTx   \t%ld:X:X              \tReadLock \tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
     fflush(ZGT_Sh->logfile);
   }
  
@@ -296,10 +310,19 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
   // No deadlock detection! Just wait for the lock to be released.
   zgt_p(otherTxnLock->tid);  
   this->status = TR_ACTIVE;
+
+  // 🚨 **Wake up all waiting transactions** after lock is released
+//   for (int i = 0; i < ZGT_Nsema; i++) { 
+//     if (zgt_nwait(i) > 0) {
+//         zgt_v(i);  // Wake up waiting transactions
+//     }
+// }
  
   return set_lock(this->tid, sgno1, obno1, count, lockmode1);
  
 }
+
+
  
 int zgt_tx::free_locks()
 {
@@ -309,7 +332,8 @@ int zgt_tx::free_locks()
   // and release all Tx's waiting on this Tx
  
   zgt_hlink* temp = head;  //first obj of tx
- 
+  print_tm();
+  ZGT_Ht->print_ht();
   for(temp;temp != NULL;temp = temp->nextp){  // SCAN Tx obj list
  
       fprintf(ZGT_Sh->logfile, "%ld : %d, ", temp->obno, ZGT_Sh->objarray[temp->obno]->value);
@@ -426,14 +450,14 @@ void zgt_tx::perform_read_write_operation(long tid,long obno, char lockmode){
         fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tWriteTx  \t%ld:%d:%-14d\tWriteLock\tGranted\t\t%c\n",
                 this->tid, obno, ZGT_Sh->objarray[obno]->value, ZGT_Sh->optime[tid], this->status);
         fflush(ZGT_Sh->logfile);
-        usleep(ZGT_Sh->optime[tid] * 1000);  // Simulate operation delay
+        usleep(ZGT_Sh->optime[tid] * 10);  // Simulate operation delay
     }
     else {  // Read operation
         ZGT_Sh->objarray[obno]->value = objectValue - 4; // Decrease by 4 (as per project spec)
         fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tReadTx   \t%ld:%d:%-14d\tReadLock \tGranted\t\t%c\n",
                 this->tid, obno, ZGT_Sh->objarray[obno]->value, ZGT_Sh->optime[tid], this->status);
         fflush(ZGT_Sh->logfile);
-        usleep(ZGT_Sh->optime[tid] * 1000);  // Simulate operation delay
+        usleep(ZGT_Sh->optime[tid] * 10);  // Simulate operation delay
     }
  
 }

@@ -1,0 +1,145 @@
+
+Initializing the TM
+
+leaving TM initialization
+// serializable history
+// serializable history
+// conflicts but total order
+// conflicts but total order
+LogFile ../test-files/C2Tsz.log
+Log file name:../test-files/C2Tsz.log
+
+entering openlog
+
+Given log file pointer: (nil)
+leaving openlog
+BeginTx 1 W
+BeginTx : 1
+
+TxType : W
+
+
+creating BeginTx thread for Tx: 1
+
+finished creating BeginTx thread for Tx: 1
+Read    1 3
+Read : 1 : 3
+
+
+creating TxRead thread for Tx: 1
+
+exiting TxRead thread create for Tx: 1
+Read    1 2
+Read : 1 : 2
+
+
+creating TxRead thread for Tx: 1
+
+exiting TxRead thread create for Tx: 1
+BeginTx 2 W
+BeginTx : 2
+
+TxType : W
+
+
+creating BeginTx thread for Tx: 2
+
+finished creating BeginTx thread for Tx: 2
+Read    2 1
+Read : 2 : 1
+
+
+creating TxRead thread for Tx: 2
+
+exiting TxRead thread create for Tx: 2
+Write   2 3
+Write : 2 : 3
+
+
+entering TxWrite for TID: 2, OBNO: 3
+
+leaving TxWrite for TID: 2
+Write   1 3
+Write : 1 : 3
+
+
+entering TxWrite for TID: 1, OBNO: 3
+
+leaving TxWrite for TID: 1
+Write   1 2
+Write : 1 : 2
+
+
+entering TxWrite for TID: 1, OBNO: 2
+
+leaving TxWrite for TID: 1
+Write   2 2
+Write : 2 : 2
+
+
+entering TxWrite for TID: 2, OBNO: 2
+
+leaving TxWrite for TID: 2
+Commit  1
+Commit : 2
+
+
+Entering CommitTx for TID: 1
+
+Leaving CommitTx for TID: 1
+commit 2
+Commit : 1
+
+
+Entering CommitTx for TID: 2
+
+Leaving CommitTx for TID: 2
+end all
+Release all resources and exit:
+
+
+Entering End of schedule thread with thrNum: 11
+Wait for threads and cleanup
+Thread 0 completed with ret value: 0
+Thread 1 completed with ret value: 0
+Thread 2 completed with ret value: 0
+Thread 3 completed with ret value: 0
+Thread 4 completed with ret value: 0
+printing the tx  list 
+Tid	TxType	Thrid		objno	lock	status	semno
+2	W	137849542280960	3	X	W	-1
+1	W	137849573738240	-1	X	C	1
+printing the Hash table
+Bucket 	 Tid 	 	 objno 	 lockmode 
+0: 2 1 S ->
+4: 1 2 S ->1 3 S ->
+
+:::Hash node with Tid:1, obno:2 lockmode:S removed
+
+:::Hash node with Tid:1, obno:3 lockmode:S removed
+Thread 5 completed with ret value: 0
+Thread 6 completed with ret value: 0
+Thread 7 completed with ret value: 0
+Thread 8 completed with ret value: 0
+Thread 9 completed with ret value: 0
+printing the tx  list 
+Tid	TxType	Thrid		objno	lock	status	semno
+2	W	137849542280960	3	X	C	-1
+1	W	137849573738240	-1	X	C	1
+printing the Hash table
+Bucket 	 Tid 	 	 objno 	 lockmode 
+0: 2 1 S ->
+4: 2 2 X ->2 3 X ->
+
+:::Hash node with Tid:2, obno:2 lockmode:X removed
+
+:::Hash node with Tid:2, obno:3 lockmode:X removed
+
+:::Hash node with Tid:2, obno:1 lockmode:S removed
+Thread 10 completed with ret value: 0
+ALL threads finished their work
+Releasing mutexes and condpool
+Releasing all semaphores
+endTm completed
+
+Finished end of schedule thread: endTm

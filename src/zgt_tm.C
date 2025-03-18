@@ -42,7 +42,7 @@ void zgt_tm::openlog(string lfile)
    printf("\nGiven log file pointer: %p\n", (void *)logfile);
    fflush(stdout);
 #endif
- if ((this->logfile = fopen(this->logfilename, "w")) == NULL){
+ if ((this->logfile = fopen(this->logfilename, "a")) == NULL){
    printf("\nCannot open log file for write/append:%s\n", logfilename);fflush(stdout);
    exit(1);
  }
