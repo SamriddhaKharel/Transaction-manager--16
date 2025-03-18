@@ -1,4 +1,3 @@
-//zgt_tx.C
 /***************** Transaction class **********************/
 /*** Implements methods that handle Begin, Read, Write, ***/
 /*** Abort, Commit operations of transactions. These    ***/
@@ -209,9 +208,9 @@ void *do_commit_abort_operation(long t, char status)
   }
  
   // Log Commit or Abort
-  fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\t%s\t", t, (status == 'C') ? "CommitTx" : "AbortTx");
+  fprintf(ZGT_Sh->logfile, "T%-4ld         \t%s\t", t, (status == 'C') ? "CommitTx" : "AbortTx ");
   fflush(ZGT_Sh->logfile);
- 
+
   // Set transaction status
   tx->status = status;
  
@@ -271,7 +270,8 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
  
   zgt_hlink *otherTxnLock = ZGT_Ht->find(sgno1, obno1);
   // If no other transaction holds a lock, acquire it immediately
-  if (!otherTxnLock || (otherTxnLock->lockmode == 'S' && lockmode1 == 'S')) {  
+  if (!otherTxnLock || (otherTxnLock->lockmode == 'S' && lockmode1 == 'S')) 
+  {  
     if (ZGT_Ht->add(this, sgno1, obno1, lockmode1) >= 0) {
         this->perform_read_write_operation(tid1, obno1, lockmode1);
         return 0;
@@ -282,44 +282,45 @@ int zgt_tx::set_lock(long tid1, long sgno1, long obno1, int count, char lockmode
     }
   }
 
-  // If another transaction holds the lock when write wants the lock, log "Not Granted"
+  // If another transaction holds X lock when write wants the lock, log "Not Granted"
   if (lockmode1 == 'X' && otherTxnLock->lockmode == 'X')
   {
-    fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tWriteTx  \t%ld:X:X              \tWriteLock\tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
+    fprintf(ZGT_Sh->logfile, "T%-4ld         \tWriteTx  \t%ld:X:X              \tWriteLock\tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
     fflush(ZGT_Sh->logfile);
   }
-
+  // If another transaction holds S lock when write wants the lock, log "Not Granted"
   if (lockmode1 == 'X' && otherTxnLock->lockmode == 'S')
   {
-    fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tWriteTx  \t%ld:X:X              \tWriteLock\tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
+    fprintf(ZGT_Sh->logfile, "T%-4ld         \tWriteTx  \t%ld:X:X              \tWriteLock\tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
     fflush(ZGT_Sh->logfile);
   }
-
+  // If another transaction holds X lock when read wants the lock, log "Not Granted"
   if (lockmode1 == 'S' && otherTxnLock->lockmode == 'X')
   {
-    fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tReadTx   \t%ld:X:X              \tReadLock \tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
+    fprintf(ZGT_Sh->logfile, "T%-4ld         \tReadTx   \t%ld:X:X              \tReadLock \tNotGranted\tW for T%ld\n", this->tid, obno1, otherTxnLock->tid);
     fflush(ZGT_Sh->logfile);
   }
  
-  // Set transaction to end state
+  // Setting transaction to end state
   this->status = TR_WAIT;
   this->lockmode = lockmode1;
   this->obno = obno1;
   this->setTx_semno(otherTxnLock->tid, otherTxnLock->tid);
  
-  // No deadlock detection! Just wait for the lock to be released.
+  // No deadlock detection, Just wait for the lock to be released
   zgt_p(otherTxnLock->tid);  
   this->status = TR_ACTIVE;
 
-  // 🚨 **Wake up all waiting transactions** after lock is released
-//   for (int i = 0; i < ZGT_Nsema; i++) { 
-//     if (zgt_nwait(i) > 0) {
-//         zgt_v(i);  // Wake up waiting transactions
-//     }
-// }
+  // Wake up all waiting transactions after lock is released
+  for (int i = 0; i < ZGT_Nsema; i++) 
+  { 
+    if (zgt_nwait(i) > 0) 
+    {
+        zgt_v(i);  // Wake up waiting transactions
+    }
+  }
  
   return set_lock(this->tid, sgno1, obno1, count, lockmode1);
- 
 }
 
 
@@ -447,14 +448,14 @@ void zgt_tx::perform_read_write_operation(long tid,long obno, char lockmode){
  
     if (lockmode == 'X') {  // Write operation
         ZGT_Sh->objarray[obno]->value = objectValue + 7; // Increase by 7 (as per project spec)
-        fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tWriteTx  \t%ld:%d:%-14d\tWriteLock\tGranted\t\t%c\n",
+        fprintf(ZGT_Sh->logfile, "T%-4ld         \tWriteTx  \t%ld:%d:%-14d\tWriteLock\tGranted\t\t%c\n",
                 this->tid, obno, ZGT_Sh->objarray[obno]->value, ZGT_Sh->optime[tid], this->status);
         fflush(ZGT_Sh->logfile);
         usleep(ZGT_Sh->optime[tid] * 10);  // Simulate operation delay
     }
     else {  // Read operation
         ZGT_Sh->objarray[obno]->value = objectValue - 4; // Decrease by 4 (as per project spec)
-        fprintf(ZGT_Sh->logfile, "T%-4ld\t\t\tReadTx   \t%ld:%d:%-14d\tReadLock \tGranted\t\t%c\n",
+        fprintf(ZGT_Sh->logfile, "T%-4ld         \tReadTx   \t%ld:%d:%-14d\tReadLock \tGranted\t\t%c\n",
                 this->tid, obno, ZGT_Sh->objarray[obno]->value, ZGT_Sh->optime[tid], this->status);
         fflush(ZGT_Sh->logfile);
         usleep(ZGT_Sh->optime[tid] * 10);  // Simulate operation delay

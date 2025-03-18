@@ -342,8 +342,8 @@ zgt_tm::zgt_tm()
       int y = (int) x; 
       optime[i]= abs(y); 
 #ifdef TM_DEBUG
-//   printf("\nValues of i, r, x, and y are: %d, %f, %f, %d\n", i, r, x, y);
-//  fflush(stdout);
+   printf("\nValues of i, r, x, and y are: %d, %f, %f, %d\n", i, r, x, y);
+   fflush(stdout);
 #endif
     }
 

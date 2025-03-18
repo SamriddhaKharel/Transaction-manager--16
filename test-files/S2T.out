@@ -1,6 +1,26 @@
 
 Initializing the TM
 
+Values of i, r, x, and y are: 1, 0.987158, 15794.525072, 15794
+
+Values of i, r, x, and y are: 2, 0.122530, 1960.479707, 1960
+
+Values of i, r, x, and y are: 3, 0.642377, 10278.036579, 10278
+
+Values of i, r, x, and y are: 4, 0.910300, 14564.799003, 14564
+
+Values of i, r, x, and y are: 5, 0.545704, 8731.262341, 8731
+
+Values of i, r, x, and y are: 6, 0.678754, 10860.057607, 10860
+
+Values of i, r, x, and y are: 7, 0.393280, 6292.482689, 6292
+
+Values of i, r, x, and y are: 8, 0.264369, 4229.897477, 4229
+
+Values of i, r, x, and y are: 9, 0.687645, 11002.316691, 11002
+
+Values of i, r, x, and y are: 10, 0.999114, 15985.822484, 15985
+
 leaving TM initialization
 // serial history
 // serial history
@@ -140,8 +160,8 @@ Wait for threads and cleanup
 Thread 0 completed with ret value: 0
 printing the tx  list 
 Tid	TxType	Thrid		objno	lock	status	semno
-1	W	139110635276032	-1	 	P	-1
-2	W	139110530418432	-1	S	C	-1
+2	W	127414132803328	-1	S	C	-1
+1	W	127414237660928	-1	 	P	-1
 printing the Hash table
 Bucket 	 Tid 	 	 objno 	 lockmode 
 0: 1 1 S ->
@@ -160,8 +180,8 @@ Thread 6 completed with ret value: 0
 Thread 7 completed with ret value: 0
 printing the tx  list 
 Tid	TxType	Thrid		objno	lock	status	semno
-1	W	139110635276032	-1	X	C	-1
-2	W	139110530418432	-1	S	C	-1
+2	W	127414132803328	-1	S	C	-1
+1	W	127414237660928	-1	X	C	-1
 printing the Hash table
 Bucket 	 Tid 	 	 objno 	 lockmode 
 0: 1 1 S ->
